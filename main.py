@@ -40,7 +40,7 @@ def main(algo: str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Search algorithms')
-    parser.add_argument('--algo', type=str, help='Enter search algorithm', default='DFS')
+    parser.add_argument('--algo', type=str, help='Enter search algorithm', default='A*')
 
     args = parser.parse_args()
     main(args.algo)

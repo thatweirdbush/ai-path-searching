@@ -3,7 +3,6 @@ import random
 from const import *
 import const
 
-
 # Random seed
 random.seed(2345)
 
@@ -54,6 +53,9 @@ class Node:
         self.color = color
         self.draw(sc)
 
+    def get_id(self):
+        return self.id
+
 
 # Parse data from txt file
 def read_input_file(filename):
@@ -65,11 +67,8 @@ def read_input_file(filename):
         tokens = [int(num) for num in lines[0].split(',')]
 
         # set maze's limit
-        const.ROWS = tokens[0]
-        const.COLS = tokens[1]
-
-        # const.ROWS = 22
-        # const.COLS = 30
+        const.COLS = tokens[0]
+        const.ROWS = tokens[1]
 
         # set maze resolution
         const.RES = 27.5 * const.COLS, 27.5 * const.ROWS
@@ -78,8 +77,9 @@ def read_input_file(filename):
         tokens = [int(num) for num in lines[1].split(',')]
 
         # turn start & goal node from matrix coordinates into list coordinates
-        const.START = tokens[0] * const.COLS + tokens[1]
-        const.GOAL = tokens[2] * const.COLS + tokens[3]
+        const.START = tokens[1] * const.COLS + tokens[0]
+        const.GOAL = tokens[3] * const.COLS + tokens[2]
+
         # get number of polygons & list of polygons
         num_polygons = int(lines[2])
         polygons: list[list[Node]] = []
@@ -87,12 +87,11 @@ def read_input_file(filename):
         for i in range(3, 3 + num_polygons):
             polygon_tokens = [int(num) for num in lines[i].split(',')]
             nodes: list[Node] = []
-            for j in range(0, len(polygon_tokens) - 1):
+            for j in range(0, len(polygon_tokens) - 1, 2):
                 is_brick = True
-                x = polygon_tokens[j]
-                y = polygon_tokens[j + 1]
-                nodes.append(Node(y * (A + A1) + BOUND, x * (A + A1) + BOUND, A, x * COLS + y, is_brick))
-                j = j + 1
+                y = polygon_tokens[j]
+                x = polygon_tokens[j + 1]
+                nodes.append(Node(y * (A + A1) + BOUND, x * (A + A1) + BOUND, A, x * const.COLS + y, is_brick))
             polygons.append(nodes)
     return polygons
 
@@ -101,11 +100,20 @@ class SearchSpace:
     def __init__(self, polygons) -> None:
         # create list of nodes & turn into matrix
         self.grid_cells: list[Node] = []
+
+        # create all are paths
         for i in range(const.ROWS):
             for j in range(const.COLS):
                 # define the brick's appearing
-                is_brick = True if random.randint(1, 3) == 1 else False
+                # is_brick = True if random.randint(1, 3) == 1 else False
+                is_brick = False
                 self.grid_cells.append(Node(j * (A + A1) + BOUND, i * (A + A1) + BOUND, A, i * const.COLS + j, is_brick))
+
+        # update polygons
+        for i in range(len(polygons)):
+            for j in range(len(polygons[i])):
+                index = ((polygons[i])[j]).get_id()
+                self.grid_cells[index] = (polygons[i])[j]
 
         # set index & color for start & goal node
         self.start: Node = self.grid_cells[const.START]
