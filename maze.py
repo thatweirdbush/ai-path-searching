@@ -44,7 +44,7 @@ class Node:
         self.is_brick = is_brick
         self.color = BLACK if self.is_brick else WHITE
         self.id = id
-        self.cost = 0  # Add attribute: cost of each none-brick node
+        self.cost = 1  # Add attribute: cost of each none-brick node
 
     def draw(self, sc: pygame.Surface) -> None:
         pygame.draw.rect(sc, self.color, self.rect)
@@ -235,12 +235,14 @@ class SearchSpace:
         right_up = (y - 1) * const.COLS + (x + 1) if y - 1 >= 0 and x + 1 < const.COLS else None
         right_down = (y + 1) * const.COLS + (x + 1) if y + 1 < const.ROWS and x + 1 < const.COLS else None
 
-        directions = [left_up, left, left_down, down, right_down, right, right_up, up]
-        # directions = [left, down, right, up]  # 4 directions version
+        directions = [right_down, down, left_down, left, left_up, up, right_up, right]
+        # directions = [down, left, up, right]  # 4 directions version
+
         neighbors = []
         for dir_ in directions:
+            x, y = self.grid_cells[dir_].x, self.grid_cells[dir_].y
             if (dir_ is not None and not self.grid_cells[dir_].is_brick and
-                    not self.is_inside_polygon(self.grid_cells[dir_].x, self.grid_cells[dir_].y, self.polygons)):
+                    not self.is_inside_polygon(x, y, self.polygons)):
                 neighbors.append(self.grid_cells[dir_])
 
         return neighbors
@@ -260,8 +262,8 @@ class SearchSpace:
         right_up = (y - 1) * const.COLS + (x + 1) if y - 1 >= 0 and x + 1 < const.COLS else None
         right_down = (y + 1) * const.COLS + (x + 1) if y + 1 < const.ROWS and x + 1 < const.COLS else None
 
-        directions = [left_up, left, left_down, down, right_down, right, right_up, up]
-        # directions = [left, down, right, up]  # 4 directions version
+        directions = [right_down, down, left_down, left, left_up, up, right_up, right]
+        # directions = [down, left, up, right]  # 4 directions version
 
         neighbors = []
         for dir_ in directions:

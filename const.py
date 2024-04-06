@@ -11,7 +11,7 @@ GOAL = 0
 FPS = 60
 
 # change the speed here
-SPEED = 30
+SPEED = 50
 
 # bool mode
 ON = True
@@ -22,6 +22,10 @@ MODE = OFF
 
 # change path marking symbol here
 PATH_MARK = "+"
+
+# change cost here
+D = 1
+D2 = 1.5
 
 # default colors
 DARK_GREY = (70, 70, 70)
