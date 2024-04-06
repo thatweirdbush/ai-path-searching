@@ -4,7 +4,7 @@ from maze import *
 
 
 ''''''''''''''''''''''''
-
+full_polygons: list[list[int]] = []
 
 def DFS(g: SearchSpace, sc: pygame.Surface):
     print('Implement DFS algorithm')
@@ -328,6 +328,9 @@ def AStar(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node):
     cost = [float('inf')] * g.get_length()
     cost[start.id] = 0
 
+    # Save the previous node of the current one - optimize the BLUE coloring stage
+    previous_node = start
+
     while not open_set.empty():
         current_cost, current_node_id = open_set.get()
 
@@ -337,8 +340,14 @@ def AStar(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node):
         current_node = g.grid_cells[current_node_id]
         closed_set.add(current_node_id)
 
+        # Set the color of the visited nodes - BLUE
+        previous_node.set_color(BLUE, sc)
+
         if g.is_goal(current_node):
             break
+
+        # Set color for current node - YELLOW
+        current_node.set_color(YELLOW, sc)
 
         for neighbor in g.get_neighbors(current_node):
             neighbor_id = neighbor.id
@@ -352,6 +361,15 @@ def AStar(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node):
                 remaining_cost = heuristic(neighbor, goal)
                 total_cost = new_cost + remaining_cost
                 open_set.put((total_cost, neighbor_id))
+
+                # Set color of nodes that can be visited - RED
+                neighbor.set_color(RED, sc)
+
+        # Save current node to color it BLUE in the next while loop
+        previous_node = current_node
+
+        # Manual adjust animation speed
+        set_animation_speed()
 
     # Recolor start and goal node
     start.set_color(ORANGE, sc)
@@ -389,9 +407,9 @@ def heuristic(node, goal):
     return abs(node.rect.centerx - goal.rect.centerx) + abs(node.rect.centery - goal.rect.centery)
 
 
-def AStarForPolygon(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node):
-    print('Implement AStar algorithm for polygon')
 
+
+def AStarForPolygon(g: SearchSpace, sc: pygame.Surface, polygon: list[int], start: Node, goal: Node):
     # The set which contains the nodes that could be visited
     open_set = PriorityQueue()
 
@@ -407,9 +425,6 @@ def AStarForPolygon(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node)
     cost = [float('inf')] * g.get_length()
     cost[start.id] = 0
 
-    # Save the previous node of the current one - optimize the BLUE coloring stage
-    previous_node = start
-
     while not open_set.empty():
         current_cost, current_node_id = open_set.get()
 
@@ -419,14 +434,8 @@ def AStarForPolygon(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node)
         current_node = g.grid_cells[current_node_id]
         closed_set.add(current_node_id)
 
-        # Set the color of the visited nodes - BLUE
-        # previous_node.set_color(BLUE, sc)
-
         if g.is_goal(current_node):
             break
-
-        # Set color for current node - YELLOW
-        # current_node.set_color(YELLOW, sc)
 
         for neighbor in g.get_neighbors_for_polygon(current_node):
             neighbor_id = neighbor.id
@@ -441,15 +450,8 @@ def AStarForPolygon(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node)
                 total_cost = new_cost + remaining_cost
                 open_set.put((total_cost, neighbor_id))
 
-                # Set color of nodes that can be visited - RED
-                # neighbor.set_color(RED, sc)
-
-        # Save current node to color it BLUE in the next while loop
-        previous_node = current_node
-
         # Manual adjust animation speed
         # set_animation_speed()
-
 
     # Trace back the path from the goal node to the start node
     path = []
@@ -460,13 +462,16 @@ def AStarForPolygon(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node)
         current_node_id = father[current_node_id]
     path.reverse()
 
-    # Draw the path in white
+    # Draw the path with '+' symbols
     for i in range(len(path) - 1):
         end_node = g.grid_cells[path[i + 1]]
-        end_node.is_brick=True
-        end_node.set_color(BLACK,sc)
-        # pygame.draw.line(sc, WHITE, start_node.rect.center, end_node.rect.center, 3)
+        end_node.is_brick = True
+        end_node.set_color(BLACK, sc)
         # set_animation_speed()
+
+        # update current polygon's node, except for initial ones
+        if i != len(path) - 2:
+            polygon.append(end_node.id)
 
     # Recolor start and goal node
     start.set_color(GREEN, sc)

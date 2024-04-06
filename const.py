@@ -11,7 +11,7 @@ GOAL = 0
 FPS = 60
 
 # change the speed here
-SPEED = 20
+SPEED = 30
 
 # bool mode
 ON = True

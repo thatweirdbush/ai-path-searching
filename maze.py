@@ -109,6 +109,7 @@ def read_input_file(filename):
 
 class SearchSpace:
     def __init__(self, polygons, sc: pygame.Surface) -> None:
+        self.polygons = polygons
         # create list of nodes & turn into matrix
         self.grid_cells: list[Node] = []
 
@@ -151,6 +152,9 @@ class SearchSpace:
         self.goal.is_brick = False
         self.goal._set_color(PURPLE)
 
+        # deep copy using list comprehension
+        algos.full_polygons = [polygon[:] for polygon in polygons]
+
         # connect polygons' initial nodes, using A*
         for i in range(len(polygons)):
             for j in range(0, len(polygons[i]) - 1):
@@ -158,7 +162,7 @@ class SearchSpace:
                 next = (polygons[i])[j + 1]
                 self.grid_cells[next].is_brick = True
                 self.grid_cells[next]._set_color(BLACK)
-                algos.AStarForPolygon(self, sc, self.grid_cells[index], self.grid_cells[next])
+                algos.AStarForPolygon(self, sc, algos.full_polygons[i], self.grid_cells[index], self.grid_cells[next])
 
         # connect polygon's last node to first node
         for i in range(len(polygons)):
@@ -166,8 +170,7 @@ class SearchSpace:
             next = (polygons[i])[-0]
             self.grid_cells[next].is_brick = True
             self.grid_cells[next]._set_color(BLACK)
-            algos.AStarForPolygon(self, sc, self.grid_cells[index], self.grid_cells[next])
-
+            algos.AStarForPolygon(self, sc, algos.full_polygons[i], self.grid_cells[index], self.grid_cells[next])
 
     def draw(self, sc: pygame.Surface):
         for node in self.grid_cells:
@@ -180,6 +183,42 @@ class SearchSpace:
     def is_goal(self, node: Node):
         # return node.id == self.goal.id
         return node.id == self.grid_cells[const.GOAL].id
+
+
+    def is_inside(self, x, y, polygon: list[int]) -> bool:
+        # n = len(polygon)
+        # inside = False
+        # p1x, p1y = self.grid_cells[polygon[0]].x, self.grid_cells[polygon[0]].y
+        # for i in range(n + 1):
+        #     p2x, p2y = self.grid_cells[polygon[i % n]].x, self.grid_cells[polygon[i % n]].y
+        #     if y > min(p1y, p2y):
+        #         if y <= max(p1y, p2y):
+        #             if x <= max(p1x, p2x):
+        #                 if p1y != p2y:
+        #                     xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+        #                 if p1x == p2x or x <= xinters:
+        #                     inside = not inside
+        #     p1x, p1y = p2x, p2y
+        # return inside
+
+        n = len(polygon)
+        inside = False
+
+        for i in range(n):
+            x1, y1 = self.grid_cells[polygon[i]].x, self.grid_cells[polygon[i]].y
+            x2, y2 = self.grid_cells[polygon[(i + 1) % n]].x, self.grid_cells[polygon[(i + 1) % n]].y
+
+            # Kiểm tra giao điểm giữa đoạn thẳng (x, y) và cạnh của đa giác
+            if (y1 < y <= y2 or y2 < y <= y1) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+                inside = not inside
+
+        return inside
+
+    def is_inside_polygon(self, x, y, polygons: list[list[int]]) -> bool:
+        for polygon in polygons:
+            if self.is_inside(x, y, polygon):
+                return True
+        return False
 
     def get_neighbors(self, node: Node) -> list[Node]:
         x = node.x
@@ -198,10 +237,10 @@ class SearchSpace:
 
         directions = [left_up, left, left_down, down, right_down, right, right_up, up]
         # directions = [left, down, right, up]  # 4 directions version
-
         neighbors = []
         for dir_ in directions:
-            if dir_ is not None and not self.grid_cells[dir_].is_brick:
+            if (dir_ is not None and not self.grid_cells[dir_].is_brick and
+                    not self.is_inside_polygon(self.grid_cells[dir_].x, self.grid_cells[dir_].y, self.polygons)):
                 neighbors.append(self.grid_cells[dir_])
 
         return neighbors

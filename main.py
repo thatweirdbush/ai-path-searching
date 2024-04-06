@@ -14,7 +14,7 @@ def main(algo: str):
     clock = pygame.time.Clock()
     sc.fill(pygame.color.Color(DARK_GREY))
     g = SearchSpace(polygons, sc)
-    generate_random_costs(g)
+    # generate_random_costs(g)
     g.draw(sc)
     clock.tick(FPS)
 
