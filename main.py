@@ -12,8 +12,8 @@ def main(algo: str):
 
     sc = pygame.display.set_mode(const.RES)
     clock = pygame.time.Clock()
-    sc.fill(pygame.color.Color(GREY))
-    g = SearchSpace(polygons)
+    sc.fill(pygame.color.Color(DARK_GREY))
+    g = SearchSpace(polygons, sc)
     generate_random_costs(g)
     g.draw(sc)
     clock.tick(FPS)
@@ -26,7 +26,8 @@ def main(algo: str):
     elif algo == 'UCS':
         UCS(g, sc)
     elif algo == 'A*':
-        AStar(g, sc)
+        print(g.goal.id)
+        AStar(g, sc, g.start, g.goal)
     else:
         raise NotImplementedError('Not implemented')
 

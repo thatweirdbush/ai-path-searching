@@ -1,5 +1,8 @@
 import pygame
 import random
+
+import algos
+from algos import *
 from const import *
 import const
 
@@ -34,11 +37,14 @@ def generate_random_costs(search_space):
 class Node:
     # a is side of the square
     def __init__(self, x, y, a, id, is_brick=False) -> None:
-        self.rect = pygame.Rect(x, y, a, a)
+        self.x = x
+        self.y = y
+        self.is_brick = is_brick
+        self.rect = pygame.Rect(x * (A + A1) + BOUND, y * (A + A1) + BOUND, a, a)
         self.is_brick = is_brick
         self.color = BLACK if self.is_brick else WHITE
         self.id = id
-        self.cost = None  # Add attribute: cost of each none-brick node
+        self.cost = 0  # Add attribute: cost of each none-brick node
 
     def draw(self, sc: pygame.Surface) -> None:
         pygame.draw.rect(sc, self.color, self.rect)
@@ -56,6 +62,12 @@ class Node:
     def get_id(self):
         return self.id
 
+    def get_x(self):
+        return self.x
+
+    def get_y(self):
+        return self.y
+
 
 # Parse data from txt file
 def read_input_file(filename):
@@ -67,8 +79,8 @@ def read_input_file(filename):
         tokens = [int(num) for num in lines[0].split(',')]
 
         # set maze's limit
-        const.COLS = tokens[0]
-        const.ROWS = tokens[1]
+        const.COLS = tokens[0] + 1
+        const.ROWS = tokens[1] + 1
 
         # set maze resolution
         const.RES = 27.5 * const.COLS, 27.5 * const.ROWS
@@ -77,27 +89,26 @@ def read_input_file(filename):
         tokens = [int(num) for num in lines[1].split(',')]
 
         # turn start & goal node from matrix coordinates into list coordinates
-        const.START = tokens[1] * const.COLS + tokens[0]
-        const.GOAL = tokens[3] * const.COLS + tokens[2]
+        const.START = (const.ROWS - 1 - tokens[1]) * const.COLS + tokens[0]
+        const.GOAL = (const.ROWS - 1 - tokens[3]) * const.COLS + tokens[2]
 
         # get number of polygons & list of polygons
         num_polygons = int(lines[2])
-        polygons: list[list[Node]] = []
+        polygons: list[list[int]] = []
 
         for i in range(3, 3 + num_polygons):
             polygon_tokens = [int(num) for num in lines[i].split(',')]
-            nodes: list[Node] = []
+            nodes: list[int] = []
             for j in range(0, len(polygon_tokens) - 1, 2):
-                is_brick = True
-                y = polygon_tokens[j]
-                x = polygon_tokens[j + 1]
-                nodes.append(Node(y * (A + A1) + BOUND, x * (A + A1) + BOUND, A, x * const.COLS + y, is_brick))
+                x = polygon_tokens[j]
+                y = polygon_tokens[j + 1]
+                nodes.append((const.ROWS - 1 - y) * const.COLS + x)
             polygons.append(nodes)
     return polygons
 
 
 class SearchSpace:
-    def __init__(self, polygons) -> None:
+    def __init__(self, polygons, sc: pygame.Surface) -> None:
         # create list of nodes & turn into matrix
         self.grid_cells: list[Node] = []
 
@@ -105,15 +116,42 @@ class SearchSpace:
         for i in range(const.ROWS):
             for j in range(const.COLS):
                 # define the brick's appearing
-                # is_brick = True if random.randint(1, 3) == 1 else False
                 is_brick = False
-                self.grid_cells.append(Node(j * (A + A1) + BOUND, i * (A + A1) + BOUND, A, i * const.COLS + j, is_brick))
+                self.grid_cells.append(Node(j, i, A, i * const.COLS + j, is_brick))
+                # print(i * const.COLS + j)
 
-        # update polygons
+        # fill border color - ROWS
+        for i in range(len(self.grid_cells)):
+            y = self.grid_cells[i].get_y()
+            if (y == 0 or y == const.ROWS - 1):
+                self.grid_cells[i]._set_color(DIM_GREY)
+                self.grid_cells[i].is_brick = True
+
+        # fill border color - COLS
+        for i in range(len(self.grid_cells)):
+            x = self.grid_cells[i].get_x()
+            if (x == 0 or x == const.COLS - 1):
+                self.grid_cells[i]._set_color(DIM_GREY)
+                self.grid_cells[i].is_brick = True
+
+        # add polygons
         for i in range(len(polygons)):
             for j in range(len(polygons[i])):
-                index = ((polygons[i])[j]).get_id()
-                self.grid_cells[index] = (polygons[i])[j]
+                index = (polygons[i])[j]
+                self.grid_cells[index].is_brick = True
+                self.grid_cells[index]._set_color(BLACK)
+
+        # # connect polygons' initial nodes, using A*
+        # for i in range(len(polygons)):
+        #     for j in range(0, len(polygons[i]) - 1):
+        #         index = (polygons[i])[j]
+        #         next = (polygons[i])[j + 1]
+        #         self.grid_cells[next].is_brick = True
+        #         self.grid_cells[next]._set_color(BLACK)
+        #         algos.AStar(self, sc, self.grid_cells[index], self.grid_cells[next])
+
+
+
 
         # set index & color for start & goal node
         self.start: Node = self.grid_cells[const.START]
@@ -122,6 +160,7 @@ class SearchSpace:
         self.goal: Node = self.grid_cells[const.GOAL]
         self.goal.is_brick = False
         self.goal._set_color(PURPLE)
+
 
     def draw(self, sc: pygame.Surface):
         for node in self.grid_cells:
@@ -132,10 +171,12 @@ class SearchSpace:
         return len(self.grid_cells)
 
     def is_goal(self, node: Node):
-        return node.id == self.goal.id
+        # return node.id == self.goal.id
+        return node.id == self.grid_cells[const.GOAL].id
 
     def get_neighbors(self, node: Node) -> list[Node]:
-        x, y = node.id % const.COLS, node.id // const.COLS
+        x = node.x
+        y = node.y
 
         # define the directions of agent
         up = (y - 1) * const.COLS + x if y - 1 >= 0 else None

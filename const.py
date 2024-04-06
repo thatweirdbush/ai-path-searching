@@ -21,7 +21,8 @@ OFF = False
 MODE = OFF
 
 # default colors
-GREY = (100, 100, 100)
+DARK_GREY = (70, 70, 70)
+DIM_GREY = (110, 110, 110)
 WHITE = (255, 255, 255)  # path
 YELLOW = (200, 200, 0)  # current node
 RED = (200, 0, 0)  # discovered node

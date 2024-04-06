@@ -310,14 +310,14 @@ def UCS(g: SearchSpace, sc: pygame.Surface):
 ''''''''''''''''''''''''
 
 
-def AStar(g: SearchSpace, sc: pygame.Surface):
+def AStar(g: SearchSpace, sc: pygame.Surface, start: Node, goal: Node):
     print('Implement AStar algorithm')
 
     # The set which contains the nodes that could be visited
     open_set = PriorityQueue()
 
     # Set the root node with a sum cost of 0
-    open_set.put((0, g.start.id))
+    open_set.put((0, start.id))
 
     # The set which contains the visited nodes
     closed_set = set()
@@ -326,10 +326,10 @@ def AStar(g: SearchSpace, sc: pygame.Surface):
     # tracing the path when you reach the goal
     father = [-1] * g.get_length()
     cost = [float('inf')] * g.get_length()
-    cost[g.start.id] = 0
+    cost[start.id] = 0
 
     # Save the previous node of the current one - optimize the BLUE coloring stage
-    previous_node = g.start
+    previous_node = start
 
     while not open_set.empty():
         current_cost, current_node_id = open_set.get()
@@ -358,7 +358,7 @@ def AStar(g: SearchSpace, sc: pygame.Surface):
                 father[neighbor_id] = current_node_id
 
                 # Estimate the remaining cost using a heuristic (e.g., Manhattan distance to the goal)
-                remaining_cost = heuristic(neighbor, g.goal)
+                remaining_cost = heuristic(neighbor, goal)
                 total_cost = new_cost + remaining_cost
                 open_set.put((total_cost, neighbor_id))
 
@@ -372,12 +372,12 @@ def AStar(g: SearchSpace, sc: pygame.Surface):
         set_animation_speed()
 
     # Recolor start and goal node
-    g.start.set_color(ORANGE, sc)
-    g.goal.set_color(PURPLE, sc)
+    start.set_color(ORANGE, sc)
+    goal.set_color(PURPLE, sc)
 
     # Trace back the path from the goal node to the start node
     path = []
-    current_node_id = g.goal.id
+    current_node_id = goal.id
 
     while current_node_id != -1:
         path.append(current_node_id)
@@ -388,7 +388,8 @@ def AStar(g: SearchSpace, sc: pygame.Surface):
     for i in range(len(path) - 1):
         start_node = g.grid_cells[path[i]]
         end_node = g.grid_cells[path[i + 1]]
-
+        # end_node.is_brick=True
+        # end_node.set_color(BLACK,sc)
         pygame.draw.line(sc, WHITE, start_node.rect.center, end_node.rect.center, 3)
         set_animation_speed()
 
