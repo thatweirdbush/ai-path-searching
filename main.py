@@ -26,7 +26,6 @@ def main(algo: str):
     elif algo == 'UCS':
         UCS(g, sc)
     elif algo == 'A*':
-        print(g.goal.id)
         AStar(g, sc, g.start, g.goal)
     else:
         raise NotImplementedError('Not implemented')

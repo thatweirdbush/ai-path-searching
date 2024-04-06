@@ -20,6 +20,9 @@ OFF = False
 # change show nodes' cost mode here
 MODE = OFF
 
+# change path marking symbol here
+PATH_MARK = "+"
+
 # default colors
 DARK_GREY = (70, 70, 70)
 DIM_GREY = (110, 110, 110)

@@ -134,24 +134,14 @@ class SearchSpace:
                 self.grid_cells[i]._set_color(DIM_GREY)
                 self.grid_cells[i].is_brick = True
 
+        # set_animation_speed()
+
         # add polygons
         for i in range(len(polygons)):
             for j in range(len(polygons[i])):
                 index = (polygons[i])[j]
                 self.grid_cells[index].is_brick = True
                 self.grid_cells[index]._set_color(BLACK)
-
-        # # connect polygons' initial nodes, using A*
-        # for i in range(len(polygons)):
-        #     for j in range(0, len(polygons[i]) - 1):
-        #         index = (polygons[i])[j]
-        #         next = (polygons[i])[j + 1]
-        #         self.grid_cells[next].is_brick = True
-        #         self.grid_cells[next]._set_color(BLACK)
-        #         algos.AStar(self, sc, self.grid_cells[index], self.grid_cells[next])
-
-
-
 
         # set index & color for start & goal node
         self.start: Node = self.grid_cells[const.START]
@@ -160,6 +150,23 @@ class SearchSpace:
         self.goal: Node = self.grid_cells[const.GOAL]
         self.goal.is_brick = False
         self.goal._set_color(PURPLE)
+
+        # connect polygons' initial nodes, using A*
+        for i in range(len(polygons)):
+            for j in range(0, len(polygons[i]) - 1):
+                index = (polygons[i])[j]
+                next = (polygons[i])[j + 1]
+                self.grid_cells[next].is_brick = True
+                self.grid_cells[next]._set_color(BLACK)
+                algos.AStarForPolygon(self, sc, self.grid_cells[index], self.grid_cells[next])
+
+        # connect polygon's last node to first node
+        for i in range(len(polygons)):
+            index = (polygons[i])[-1]
+            next = (polygons[i])[-0]
+            self.grid_cells[next].is_brick = True
+            self.grid_cells[next]._set_color(BLACK)
+            algos.AStarForPolygon(self, sc, self.grid_cells[index], self.grid_cells[next])
 
 
     def draw(self, sc: pygame.Surface):
@@ -199,3 +206,27 @@ class SearchSpace:
 
         return neighbors
 
+    def get_neighbors_for_polygon(self, node: Node) -> list[Node]:
+        x = node.x
+        y = node.y
+
+        # define the directions of agent
+        up = (y - 1) * const.COLS + x if y - 1 >= 0 else None
+        down = (y + 1) * const.COLS + x if y + 1 < const.ROWS else None
+        left = y * const.COLS + (x - 1) if x - 1 >= 0 else None
+        right = y * const.COLS + (x + 1) if x + 1 < const.COLS else None
+
+        left_up = (y - 1) * const.COLS + (x - 1) if y - 1 >= 0 and x - 1 >= 0 else None
+        left_down = (y + 1) * const.COLS + (x - 1) if y + 1 < const.ROWS and x - 1 >= 0 else None
+        right_up = (y - 1) * const.COLS + (x + 1) if y - 1 >= 0 and x + 1 < const.COLS else None
+        right_down = (y + 1) * const.COLS + (x + 1) if y + 1 < const.ROWS and x + 1 < const.COLS else None
+
+        directions = [left_up, left, left_down, down, right_down, right, right_up, up]
+        # directions = [left, down, right, up]  # 4 directions version
+
+        neighbors = []
+        for dir_ in directions:
+            if dir_ is not None:
+                neighbors.append(self.grid_cells[dir_])
+
+        return neighbors
