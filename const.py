@@ -23,7 +23,7 @@ MODE = OFF
 # change path marking symbol here
 PATH_MARK = "+"
 
-# change cost here
+# change cost here, D is cost of straight line, D2 is cost of diagonal
 D = 1
 D2 = 1.5
 

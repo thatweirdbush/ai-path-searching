@@ -88,7 +88,15 @@ def read_input_file(filename):
         # get tokens from line 2
         tokens = [int(num) for num in lines[1].split(',')]
 
-        # turn start & goal node from matrix coordinates into list coordinates
+        # get pickup nodes, turn from matrix coordinates into list coordinates
+        pickups: list[int] = []
+        while len(tokens) > 4:
+            y = tokens.pop()
+            x = tokens.pop()
+            value = (const.ROWS - 1 - y) * const.COLS + x
+            pickups.append(value)
+
+        # get start & goal node, turn from matrix coordinates into list coordinates
         const.START = (const.ROWS - 1 - tokens[1]) * const.COLS + tokens[0]
         const.GOAL = (const.ROWS - 1 - tokens[3]) * const.COLS + tokens[2]
 
@@ -104,11 +112,11 @@ def read_input_file(filename):
                 y = polygon_tokens[j + 1]
                 nodes.append((const.ROWS - 1 - y) * const.COLS + x)
             polygons.append(nodes)
-    return polygons
+    return polygons, pickups
 
 
 class SearchSpace:
-    def __init__(self, polygons, sc: pygame.Surface) -> None:
+    def __init__(self, polygons, pickups: list[int], sc: pygame.Surface) -> None:
         self.polygons = polygons
         # create list of nodes & turn into matrix
         self.grid_cells: list[Node] = []
@@ -123,15 +131,16 @@ class SearchSpace:
 
         # fill border color - ROWS
         for i in range(len(self.grid_cells)):
-            y = self.grid_cells[i].get_y()
-            if (y == 0 or y == const.ROWS - 1):
+            y = self.grid_cells[i].y
+            if y == 0 or y == const.ROWS - 1:
                 self.grid_cells[i]._set_color(DIM_GREY)
                 self.grid_cells[i].is_brick = True
 
         # fill border color - COLS
         for i in range(len(self.grid_cells)):
-            x = self.grid_cells[i].get_x()
-            if (x == 0 or x == const.COLS - 1):
+
+            x = self.grid_cells[i].x
+            if x == 0 or x == const.COLS - 1:
                 self.grid_cells[i]._set_color(DIM_GREY)
                 self.grid_cells[i].is_brick = True
 
@@ -151,6 +160,10 @@ class SearchSpace:
         self.goal: Node = self.grid_cells[const.GOAL]
         self.goal.is_brick = False
         self.goal._set_color(PURPLE)
+
+        # setup pickups
+        for node in pickups:
+            self.grid_cells[node]._set_color(ORANGE)
 
         # deep copy using list comprehension
         algos.full_polygons = [polygon[:] for polygon in polygons]
@@ -180,27 +193,11 @@ class SearchSpace:
     def get_length(self):
         return len(self.grid_cells)
 
-    def is_goal(self, node: Node):
-        # return node.id == self.goal.id
-        return node.id == self.grid_cells[const.GOAL].id
+    def is_target(self, node: Node, target: Node):
+        return node.id == target.id
 
 
     def is_inside(self, x, y, polygon: list[int]) -> bool:
-        # n = len(polygon)
-        # inside = False
-        # p1x, p1y = self.grid_cells[polygon[0]].x, self.grid_cells[polygon[0]].y
-        # for i in range(n + 1):
-        #     p2x, p2y = self.grid_cells[polygon[i % n]].x, self.grid_cells[polygon[i % n]].y
-        #     if y > min(p1y, p2y):
-        #         if y <= max(p1y, p2y):
-        #             if x <= max(p1x, p2x):
-        #                 if p1y != p2y:
-        #                     xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-        #                 if p1x == p2x or x <= xinters:
-        #                     inside = not inside
-        #     p1x, p1y = p2x, p2y
-        # return inside
-
         n = len(polygon)
         inside = False
 
@@ -208,7 +205,6 @@ class SearchSpace:
             x1, y1 = self.grid_cells[polygon[i]].x, self.grid_cells[polygon[i]].y
             x2, y2 = self.grid_cells[polygon[(i + 1) % n]].x, self.grid_cells[polygon[(i + 1) % n]].y
 
-            # Kiểm tra giao điểm giữa đoạn thẳng (x, y) và cạnh của đa giác
             if (y1 < y <= y2 or y2 < y <= y1) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
                 inside = not inside
 

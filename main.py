@@ -8,25 +8,46 @@ def main(algo: str):
     pygame.display.set_caption(f'{your_name} - {algo}')
 
     # get polygon list from file
-    polygons = read_input_file("input.txt")
+    polygons, pickups = read_input_file("input.txt")
 
     sc = pygame.display.set_mode(const.RES)
     clock = pygame.time.Clock()
     sc.fill(pygame.color.Color(DARK_GREY))
-    g = SearchSpace(polygons, sc)
-    # generate_random_costs(g)
+    g = SearchSpace(polygons, pickups, sc)
     g.draw(sc)
     clock.tick(FPS)
 
+    # rearrange nodes by distant to start node
+    for i in range(len(pickups) - 1):
+        for j in range(i + 1, len(pickups)):
+            a = g.grid_cells[pickups[i]]
+            b = g.grid_cells[pickups[j]]
+            if heuristic("Manhattan", g.start, a) > heuristic("Manhattan", g.start, b):
+                pickups[i], pickups[j] = pickups[j], pickups[i]
+
+    starts: list[int] = [g.start.id]
+    starts.extend(pickups)
+    starts.append(g.goal.id)
+
     # Change the Algorithm here
     if algo == 'DFS':
-        DFS(g, sc)
+        for i in range(0, len(starts) - 1):
+            DFS(g, sc, g.grid_cells[starts[i]], g.grid_cells[starts[i + 1]])
+
     elif algo == 'BFS':
-        BFS(g, sc)
+        for i in range(0, len(starts) - 1):
+            BFS(g, sc, g.grid_cells[starts[i]], g.grid_cells[starts[i + 1]])
+
     elif algo == 'UCS':
-        UCS(g, sc)
+        # must generate random cost (1-10) or else UCS would become BFS
+        generate_random_costs(g)
+        for i in range(0, len(starts) - 1):
+            UCS(g, sc, g.grid_cells[starts[i]], g.grid_cells[starts[i + 1]])
+
     elif algo == 'A*':
-        AStar(g, sc)
+        for i in range(0, len(starts) - 1):
+            AStar(g, sc, g.grid_cells[starts[i]], g.grid_cells[starts[i + 1]])
+
     else:
         raise NotImplementedError('Not implemented')
 
@@ -40,7 +61,7 @@ def main(algo: str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Search algorithms')
-    parser.add_argument('--algo', type=str, help='Enter search algorithm', default='A*')
+    parser.add_argument('--algo', type=str, help='Enter search algorithm', default='BFS')
 
     args = parser.parse_args()
     main(args.algo)
