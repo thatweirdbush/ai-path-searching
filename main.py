@@ -1,9 +1,20 @@
+# Lớp: CSAI-CQ2021/1
+# Nhóm: 16
+# Thành viên:
+# 1. 21120060 - Nguyễn Long Giang
+# 2. 21120063 - Hà Thanh Hải
+# 3. 21120064 - Lê Quốc Hân
+# 4. 21120082 - Phan Quốc Huy
+# *********************************
+
 from algos import *
 import argparse
 import const
+
+
 def main(algo: str):
     global const
-    your_name = '21120082/21120060'
+    your_name = 'CSAI-CQ2021/1-Team16'
     pygame.init()
     pygame.display.set_caption(f'{your_name} - {algo}')
 
