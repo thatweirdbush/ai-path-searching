@@ -4,3 +4,4 @@
 # B3: Nhập vào terminal “ python main.py --algo DFS” => Enter
 # Để thay đổi thuật toán, chỉ cần thay đổi “DFS” sang “BFS hoặc UCS hoặc A*”
 # Nếu muốn thay đổi map, chỉ cần vào file main.py (dòng 11) Và thay đổi map cần chạy
+# Hoặc nếu chỉ thao tác trên terminal để đổi map thì cần đặt tên map đó là input.txt
